@@ -8,7 +8,7 @@ title: The Town of Aromas
 
 - [Aromas Grange](https://aromasgrange.org/)
   - [Neighbors Helping Neighbors](https://www.aromasnhn.org/ )
-  - [Aromas 4H](https://aromasgrange.org/boy-scouts/)
+  - [Aromas 4H](https://aromasgrange.org/aromas-4h/)
   - [Aromas Boy Scouts](https://aromasgrange.org/boy-scouts/) 
   - [Aromas Cub Scouts](#TODO)
 - [The Fraternal Orders of the Eagles in Aromas](https://aromaseagles.org/ )
