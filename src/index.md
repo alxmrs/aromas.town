@@ -36,3 +36,10 @@ title: The Town of Aromas
 ## Calendar
 
 _Comming soon!_
+
+## Media
+
+- [AROMASTORY: The Overlooked History of an Underdog Town](https://www.pajarovalleyhistory.org/aromastory-the-overlooked-history-of-an-underdog-town/). _Book_
+- [Aromas & Friends](https://aromaspodcast.com/). _Podcast_
+
+
