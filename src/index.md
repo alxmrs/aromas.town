@@ -28,6 +28,7 @@ title: The Town of Aromas
 
 ### Public Institutions
 - [Aromas School](https://www.asjusd.org/o/aromas-school) 
+- [Anzar High School](https://www.asjusd.org/o/anzar-high-school)
 - [Aromas Library](https://www.countyofmonterey.gov/government/departments-i-z/library/locations/aromas-branch)
 - [Aromas Post Office](https://tools.usps.com/locations/details/1353398)
 
