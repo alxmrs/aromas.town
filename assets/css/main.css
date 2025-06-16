@@ -1,19 +1,60 @@
 /* thanks https://bettermotherfuckingwebsite.com */
+
+/* Light mode (default) */
+:root {
+    --bg-color: #ffffff;
+    --text-color: #444;
+    --link-color: #0066cc;
+    --link-hover-color: #004499;
+    --border-color: #ccc;
+    --nav-bg: #f8f8f8;
+    --blockquote-border: #ccc;
+    --blockquote-bg: rgba(0, 0, 0, 0.02);
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-color: #1a1a1a;
+        --text-color: #e0e0e0;
+        --link-color: #66b3ff;
+        --link-hover-color: #99ccff;
+        --border-color: #555;
+        --nav-bg: #2a2a2a;
+        --blockquote-border: #555;
+        --blockquote-bg: rgba(255, 255, 255, 0.05);
+    }
+}
+
 body {
     margin: 40px auto;
     max-width: 650px;
     line-height: 1.6;
     font-size: 18px;
-    color: #444;
-    padding: 0 10px
+    color: var(--text-color);
+    background-color: var(--bg-color);
+    padding: 0 10px;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 h1, h2, h3 {
-    line-height: 1.2
+    line-height: 1.2;
+    color: var(--text-color);
+}
+
+/* Enhanced navigation styling */
+nav {
+    background-color: var(--nav-bg);
+    padding: 15px 20px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    border: 1px solid var(--border-color);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 nav ul {
     padding: 0;
+    margin: 0;
     list-style: none;
     font-weight: bold;
 }
@@ -24,25 +65,82 @@ nav ul li {
     line-height: 2.5em;
 }
 
-img {
-    max-width: 95%;
+/* Enhanced link styling */
+a {
+    color: var(--link-color);
+    text-decoration: none;
+    transition: color 0.2s ease;
 }
 
-/*Thanks https://css-tricks.com/snippets/css/simple-and-nice-blockquote-styling */
+a:hover {
+    color: var(--link-hover-color);
+    text-decoration: underline;
+}
+
+a:visited {
+    color: var(--link-color);
+    opacity: 0.8;
+}
+
+img {
+    max-width: 95%;
+    border-radius: 4px;
+}
+
+/* Enhanced blockquote styling */
 blockquote {
-    filter: opacity(75%);
-    border-left: 10px solid #ccc;
+    filter: opacity(85%);
+    border-left: 10px solid var(--blockquote-border);
+    background-color: var(--blockquote-bg);
     margin: 1.5em 10px;
     padding: 0.5em 10px;
+    border-radius: 0 4px 4px 0;
     quotes: "\201C""\201D""\2018""\2019";
+    transition: border-color 0.3s ease, background-color 0.3s ease;
 }
+
 blockquote:before {
     content: open-quote;
+    color: var(--blockquote-border);
     font-size: 4em;
     line-height: 0.1em;
     margin-right: 0.25em;
     vertical-align: -0.4em;
 }
+
 blockquote p {
     display: inline;
+}
+
+/* Enhanced footer styling */
+footer {
+    margin-top: 50px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+    text-align: center;
+    filter: opacity(66%);
+    transition: border-color 0.3s ease;
+}
+
+/* Enhanced list styling for directory */
+ul li {
+    margin-bottom: 8px;
+}
+
+ul ul {
+    margin-top: 8px;
+    margin-bottom: 16px;
+}
+
+/* Focus states for accessibility */
+a:focus,
+nav a:focus {
+    outline: 2px solid var(--link-color);
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
+/* Smooth transitions for all interactive elements */
+* {
+    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
 }
