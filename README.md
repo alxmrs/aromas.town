@@ -1,11 +1,9 @@
-# Pandoc Website Template
+# Aromas(dot)Town
 
-[![pages-deploy](https://github.com/alxmrs/pandoc-website-template/actions/workflows/pages.yml/badge.svg)](https://github.com/alxmrs/pandoc-website-template/actions/workflows/pages.yml)
-[![shellcheck](https://github.com/alxmrs/pandoc-website-template/actions/workflows/shellcheck.yml/badge.svg)](https://github.com/alxmrs/pandoc-website-template/actions/workflows/shellcheck.yml)
+[![pages-deploy](https://github.com/alxmrs/aromas.town/actions/workflows/pages.yml/badge.svg)](https://github.com/alxmrs/aromas.town/actions/workflows/pages.yml)
+[![shellcheck](https://github.com/alxmrs/aromas.town/actions/workflows/shellcheck.yml/badge.svg)](https://github.com/alxmrs/aromas.town/actions/workflows/shellcheck.yml)
 
-A template to build static websites with [Pandoc](https://pandoc.org/). 
-
-Demo site: [pandoc.merose.com](https://pandoc.merose.com/).
+[aromas.town](https://aromas.town)
 
 ## Use
 
