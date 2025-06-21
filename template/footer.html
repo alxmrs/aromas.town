@@ -3,269 +3,301 @@
 </footer>
 
 <script>
-    // Simple Perlin noise implementation
-    class PerlinNoise {
-        constructor() {
-            this.permutation = [];
-            this.p = [];
+// Simple Perlin noise implementation
+class PerlinNoise {
+    constructor() {
+        this.permutation = [];
+        this.p = [];
 
-            // Initialize permutation array with random values
-            for (let i = 0; i < 256; i++) {
-                this.permutation[i] = Math.floor(Math.random() * 256);
+        // Initialize permutation array with random values
+        for (let i = 0; i < 256; i++) {
+            this.permutation[i] = Math.floor(Math.random() * 256);
+        }
+
+        // Duplicate the permutation array
+        for (let i = 0; i < 512; i++) {
+            this.p[i] = this.permutation[i % 256];
+        }
+    }
+
+    fade(t) {
+        return t * t * t * (t * (t * 6 - 15) + 10);
+    }
+
+    lerp(t, a, b) {
+        return a + t * (b - a);
+    }
+
+    grad(hash, x, y) {
+        const h = hash & 15;
+        const u = h < 8 ? x : y;
+        const v = h < 4 ? y : h === 12 || h === 14 ? x : 0;
+        return ((h & 1) === 0 ? u : -u) + ((h & 2) === 0 ? v : -v);
+    }
+
+    noise(x, y) {
+        const X = Math.floor(x) & 255;
+        const Y = Math.floor(y) & 255;
+
+        x -= Math.floor(x);
+        y -= Math.floor(y);
+
+        const u = this.fade(x);
+        const v = this.fade(y);
+
+        const A = this.p[X] + Y;
+        const AA = this.p[A];
+        const AB = this.p[A + 1];
+        const B = this.p[X + 1] + Y;
+        const BA = this.p[B];
+        const BB = this.p[B + 1];
+
+        return this.lerp(v,
+            this.lerp(u, this.grad(this.p[AA], x, y), this.grad(this.p[BA], x - 1, y)),
+            this.lerp(u, this.grad(this.p[AB], x, y - 1), this.grad(this.p[BB], x - 1, y - 1))
+        );
+    }
+
+    octaveNoise(x, y, octaves, persistence, scale) {
+        let value = 0;
+        let amplitude = 1;
+        let frequency = scale;
+        let maxValue = 0;
+
+        for (let i = 0; i < octaves; i++) {
+            value += this.noise(x * frequency, y * frequency) * amplitude;
+            maxValue += amplitude;
+            amplitude *= persistence;
+            frequency *= 2;
+        }
+
+        return value / maxValue;
+    }
+}
+
+const canvas = document.getElementById('cloudCanvas');
+const ctx = canvas.getContext('2d');
+const starsCanvas = document.getElementById('starsCanvas');
+const starsCtx = starsCanvas.getContext('2d');
+let noise;
+
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    starsCanvas.width = window.innerWidth;
+    starsCanvas.height = window.innerHeight;
+}
+
+function generateClouds() {
+    // Only generate clouds in light mode
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        // Clear canvas and hide it in dark mode
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        canvas.style.display = 'none';
+        generateStars(); // Generate stars for dark mode
+        return;
+    }
+
+    // Show canvas in light mode and hide stars
+    canvas.style.display = 'block';
+    starsCanvas.style.display = 'none';
+    starsCtx.clearRect(0, 0, starsCanvas.width, starsCanvas.height);
+
+    noise = new PerlinNoise();
+    resizeCanvas();
+
+    const imageData = ctx.createImageData(canvas.width, canvas.height);
+    const data = imageData.data;
+
+    // Sky blue base color
+    const skyR = 135;
+    const skyG = 206;
+    const skyB = 235;
+
+    // White cloud color
+    const cloudR = 255;
+    const cloudG = 255;
+    const cloudB = 255;
+
+    const scale = 0.005;
+    const octaves = 4;
+    const persistence = 0.5;
+
+    for (let x = 0; x < canvas.width; x++) {
+        for (let y = 0; y < canvas.height; y++) {
+            const index = (y * canvas.width + x) * 4;
+
+            // Generate noise value
+            let noiseValue = noise.octaveNoise(x, y, octaves, persistence, scale);
+
+            // Normalize noise value to 0-1 range
+            noiseValue = (noiseValue + 1) / 2;
+
+            // Create cloud threshold with some randomness
+            const cloudThreshold = 0.4 + Math.sin(x * 0.001) * 0.1 + Math.cos(y * 0.001) * 0.1;
+
+            // Determine if this pixel should be cloud or sky
+            if (noiseValue > cloudThreshold) {
+                // Cloud pixel - blend between sky and white based on noise intensity
+                const cloudIntensity = Math.min((noiseValue - cloudThreshold) / (1 - cloudThreshold), 1);
+                const smoothIntensity = cloudIntensity * cloudIntensity * (3 - 2 * cloudIntensity); // Smooth step
+
+                data[index] = skyR + (cloudR - skyR) * smoothIntensity;     // Red
+                data[index + 1] = skyG + (cloudG - skyG) * smoothIntensity; // Green
+                data[index + 2] = skyB + (cloudB - skyB) * smoothIntensity; // Blue
+                data[index + 3] = 255; // Alpha
+            } else {
+                // Sky pixel
+                data[index] = skyR;     // Red
+                data[index + 1] = skyG; // Green
+                data[index + 2] = skyB; // Blue
+                data[index + 3] = 255;  // Alpha
             }
-
-            // Duplicate the permutation array
-            for (let i = 0; i < 512; i++) {
-                this.p[i] = this.permutation[i % 256];
-            }
-        }
-
-        fade(t) {
-            return t * t * t * (t * (t * 6 - 15) + 10);
-        }
-
-        lerp(t, a, b) {
-            return a + t * (b - a);
-        }
-
-        grad(hash, x, y) {
-            const h = hash & 15;
-            const u = h < 8 ? x : y;
-            const v = h < 4 ? y : h === 12 || h === 14 ? x : 0;
-            return ((h & 1) === 0 ? u : -u) + ((h & 2) === 0 ? v : -v);
-        }
-
-        noise(x, y) {
-            const X = Math.floor(x) & 255;
-            const Y = Math.floor(y) & 255;
-
-            x -= Math.floor(x);
-            y -= Math.floor(y);
-
-            const u = this.fade(x);
-            const v = this.fade(y);
-
-            const A = this.p[X] + Y;
-            const AA = this.p[A];
-            const AB = this.p[A + 1];
-            const B = this.p[X + 1] + Y;
-            const BA = this.p[B];
-            const BB = this.p[B + 1];
-
-            return this.lerp(v,
-                this.lerp(u, this.grad(this.p[AA], x, y), this.grad(this.p[BA], x - 1, y)),
-                this.lerp(u, this.grad(this.p[AB], x, y - 1), this.grad(this.p[BB], x - 1, y - 1))
-            );
-        }
-
-        octaveNoise(x, y, octaves, persistence, scale) {
-            let value = 0;
-            let amplitude = 1;
-            let frequency = scale;
-            let maxValue = 0;
-
-            for (let i = 0; i < octaves; i++) {
-                value += this.noise(x * frequency, y * frequency) * amplitude;
-                maxValue += amplitude;
-                amplitude *= persistence;
-                frequency *= 2;
-            }
-
-            return value / maxValue;
         }
     }
 
-    const canvas = document.getElementById('cloudCanvas');
-    const ctx = canvas.getContext('2d');
-    const starsCanvas = document.getElementById('starsCanvas');
-    const starsCtx = starsCanvas.getContext('2d');
-    let noise;
+    ctx.putImageData(imageData, 0, 0);
 
-    function resizeCanvas() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        starsCanvas.width = window.innerWidth;
-        starsCanvas.height = window.innerHeight;
+    // Add some subtle gradient overlay for depth
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
+    gradient.addColorStop(0.3, 'rgba(255, 255, 255, 0)');
+    gradient.addColorStop(0.7, 'rgba(0, 0, 0, 0)');
+    gradient.addColorStop(1, 'rgba(0, 0, 0, 0.1)');
+
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+function generateStars() {
+    resizeCanvas();
+
+    // Show stars canvas in dark mode
+    starsCanvas.style.display = 'block';
+
+    // Create gradient background from dark navy to black
+    const gradient = starsCtx.createLinearGradient(0, 0, 0, starsCanvas.height);
+    gradient.addColorStop(0, '#0a0a2e');
+    gradient.addColorStop(0.5, '#16213e');
+    gradient.addColorStop(1, '#0f0f1a');
+
+    starsCtx.fillStyle = gradient;
+    starsCtx.fillRect(0, 0, starsCanvas.width, starsCanvas.height);
+
+    // Generate stars
+    const numStars = Math.floor((starsCanvas.width * starsCanvas.height) / 8000);
+
+    for (let i = 0; i < numStars; i++) {
+        const x = Math.random() * starsCanvas.width;
+        const y = Math.random() * starsCanvas.height;
+        const size = Math.random() * 2 + 0.5;
+        const brightness = Math.random() * 0.8 + 0.2;
+
+        // Create star with subtle glow
+        const starGradient = starsCtx.createRadialGradient(x, y, 0, x, y, size * 2);
+        starGradient.addColorStop(0, `rgba(255, 255, 255, ${brightness})`);
+        starGradient.addColorStop(0.5, `rgba(255, 255, 255, ${brightness * 0.5})`);
+        starGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+        starsCtx.fillStyle = starGradient;
+        starsCtx.beginPath();
+        starsCtx.arc(x, y, size * 2, 0, Math.PI * 2);
+        starsCtx.fill();
+
+        // Add bright center
+        starsCtx.fillStyle = `rgba(255, 255, 255, ${brightness})`;
+        starsCtx.beginPath();
+        starsCtx.arc(x, y, size, 0, Math.PI * 2);
+        starsCtx.fill();
     }
 
-    function generateClouds() {
-        // Only generate clouds in light mode
-        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            // Clear canvas and hide it in dark mode
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            canvas.style.display = 'none';
-            generateStars(); // Generate stars for dark mode
-            return;
-        }
+    // Add some larger, brighter stars
+    const numBrightStars = Math.floor(numStars / 20);
+    for (let i = 0; i < numBrightStars; i++) {
+        const x = Math.random() * starsCanvas.width;
+        const y = Math.random() * starsCanvas.height;
+        const size = Math.random() * 3 + 2;
 
-        // Show canvas in light mode and hide stars
-        canvas.style.display = 'block';
-        starsCanvas.style.display = 'none';
-        starsCtx.clearRect(0, 0, starsCanvas.width, starsCanvas.height);
+        // Bright star with larger glow
+        const brightGradient = starsCtx.createRadialGradient(x, y, 0, x, y, size * 3);
+        brightGradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+        brightGradient.addColorStop(0.3, 'rgba(255, 255, 255, 0.8)');
+        brightGradient.addColorStop(0.6, 'rgba(255, 255, 255, 0.3)');
+        brightGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
 
-        noise = new PerlinNoise();
-        resizeCanvas();
-
-        const imageData = ctx.createImageData(canvas.width, canvas.height);
-        const data = imageData.data;
-
-        // Sky blue base color
-        const skyR = 135;
-        const skyG = 206;
-        const skyB = 235;
-
-        // White cloud color
-        const cloudR = 255;
-        const cloudG = 255;
-        const cloudB = 255;
-
-        const scale = 0.005;
-        const octaves = 4;
-        const persistence = 0.5;
-
-        for (let x = 0; x < canvas.width; x++) {
-            for (let y = 0; y < canvas.height; y++) {
-                const index = (y * canvas.width + x) * 4;
-
-                // Generate noise value
-                let noiseValue = noise.octaveNoise(x, y, octaves, persistence, scale);
-
-                // Normalize noise value to 0-1 range
-                noiseValue = (noiseValue + 1) / 2;
-
-                // Create cloud threshold with some randomness
-                const cloudThreshold = 0.4 + Math.sin(x * 0.001) * 0.1 + Math.cos(y * 0.001) * 0.1;
-
-                // Determine if this pixel should be cloud or sky
-                if (noiseValue > cloudThreshold) {
-                    // Cloud pixel - blend between sky and white based on noise intensity
-                    const cloudIntensity = Math.min((noiseValue - cloudThreshold) / (1 - cloudThreshold), 1);
-                    const smoothIntensity = cloudIntensity * cloudIntensity * (3 - 2 * cloudIntensity); // Smooth step
-
-                    data[index] = skyR + (cloudR - skyR) * smoothIntensity;     // Red
-                    data[index + 1] = skyG + (cloudG - skyG) * smoothIntensity; // Green
-                    data[index + 2] = skyB + (cloudB - skyB) * smoothIntensity; // Blue
-                    data[index + 3] = 255; // Alpha
-                } else {
-                    // Sky pixel
-                    data[index] = skyR;     // Red
-                    data[index + 1] = skyG; // Green
-                    data[index + 2] = skyB; // Blue
-                    data[index + 3] = 255;  // Alpha
-                }
-            }
-        }
-
-        ctx.putImageData(imageData, 0, 0);
-
-        // Add some subtle gradient overlay for depth
-        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-        gradient.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
-        gradient.addColorStop(0.3, 'rgba(255, 255, 255, 0)');
-        gradient.addColorStop(0.7, 'rgba(0, 0, 0, 0)');
-        gradient.addColorStop(1, 'rgba(0, 0, 0, 0.1)');
-
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        starsCtx.fillStyle = brightGradient;
+        starsCtx.beginPath();
+        starsCtx.arc(x, y, size * 3, 0, Math.PI * 2);
+        starsCtx.fill();
     }
 
-    function generateStars() {
-        resizeCanvas();
+    // Add shooting stars occasionally
+    if (Math.random() < 0.3) {
+        const startX = Math.random() * starsCanvas.width;
+        const startY = Math.random() * starsCanvas.height * 0.5;
+        const length = Math.random() * 100 + 50;
+        const angle = Math.random() * Math.PI * 0.5 + Math.PI * 0.25;
 
-        // Show stars canvas in dark mode
-        starsCanvas.style.display = 'block';
+        const endX = startX + Math.cos(angle) * length;
+        const endY = startY + Math.sin(angle) * length;
 
-        // Create gradient background from dark navy to black
-        const gradient = starsCtx.createLinearGradient(0, 0, 0, starsCanvas.height);
-        gradient.addColorStop(0, '#0a0a2e');
-        gradient.addColorStop(0.5, '#16213e');
-        gradient.addColorStop(1, '#0f0f1a');
+        const shootingGradient = starsCtx.createLinearGradient(startX, startY, endX, endY);
+        shootingGradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+        shootingGradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.5)');
+        shootingGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
 
-        starsCtx.fillStyle = gradient;
-        starsCtx.fillRect(0, 0, starsCanvas.width, starsCanvas.height);
-
-        // Generate stars
-        const numStars = Math.floor((starsCanvas.width * starsCanvas.height) / 8000);
-
-        for (let i = 0; i < numStars; i++) {
-            const x = Math.random() * starsCanvas.width;
-            const y = Math.random() * starsCanvas.height;
-            const size = Math.random() * 2 + 0.5;
-            const brightness = Math.random() * 0.8 + 0.2;
-
-            // Create star with subtle glow
-            const starGradient = starsCtx.createRadialGradient(x, y, 0, x, y, size * 2);
-            starGradient.addColorStop(0, `rgba(255, 255, 255, ${brightness})`);
-            starGradient.addColorStop(0.5, `rgba(255, 255, 255, ${brightness * 0.5})`);
-            starGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-
-            starsCtx.fillStyle = starGradient;
-            starsCtx.beginPath();
-            starsCtx.arc(x, y, size * 2, 0, Math.PI * 2);
-            starsCtx.fill();
-
-            // Add bright center
-            starsCtx.fillStyle = `rgba(255, 255, 255, ${brightness})`;
-            starsCtx.beginPath();
-            starsCtx.arc(x, y, size, 0, Math.PI * 2);
-            starsCtx.fill();
-        }
-
-        // Add some larger, brighter stars
-        const numBrightStars = Math.floor(numStars / 20);
-        for (let i = 0; i < numBrightStars; i++) {
-            const x = Math.random() * starsCanvas.width;
-            const y = Math.random() * starsCanvas.height;
-            const size = Math.random() * 3 + 2;
-
-            // Bright star with larger glow
-            const brightGradient = starsCtx.createRadialGradient(x, y, 0, x, y, size * 3);
-            brightGradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
-            brightGradient.addColorStop(0.3, 'rgba(255, 255, 255, 0.8)');
-            brightGradient.addColorStop(0.6, 'rgba(255, 255, 255, 0.3)');
-            brightGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-
-            starsCtx.fillStyle = brightGradient;
-            starsCtx.beginPath();
-            starsCtx.arc(x, y, size * 3, 0, Math.PI * 2);
-            starsCtx.fill();
-        }
-
-        // Add shooting stars occasionally
-        if (Math.random() < 0.3) {
-            const startX = Math.random() * starsCanvas.width;
-            const startY = Math.random() * starsCanvas.height * 0.5;
-            const length = Math.random() * 100 + 50;
-            const angle = Math.random() * Math.PI * 0.5 + Math.PI * 0.25;
-
-            const endX = startX + Math.cos(angle) * length;
-            const endY = startY + Math.sin(angle) * length;
-
-            const shootingGradient = starsCtx.createLinearGradient(startX, startY, endX, endY);
-            shootingGradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
-            shootingGradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.5)');
-            shootingGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-
-            starsCtx.strokeStyle = shootingGradient;
-            starsCtx.lineWidth = 2;
-            starsCtx.beginPath();
-            starsCtx.moveTo(startX, startY);
-            starsCtx.lineTo(endX, endY);
-            starsCtx.stroke();
-        }
+        starsCtx.strokeStyle = shootingGradient;
+        starsCtx.lineWidth = 2;
+        starsCtx.beginPath();
+        starsCtx.moveTo(startX, startY);
+        starsCtx.lineTo(endX, endY);
+        starsCtx.stroke();
     }
+}
 
-    // Check if user prefers light mode and generate clouds
-    function handleColorSchemeChange() {
-        // Small delay to ensure CSS has updated
-        setTimeout(generateClouds, 50);
-    }
+// Performance optimization: track canvas size and debounce resize events
+let lastWidth = 0;
+let lastHeight = 0;
+let resizeTimeout;
 
-    // Initialize on page load
-    window.addEventListener('load', generateClouds);
-    window.addEventListener('resize', generateClouds);
+function handleResize() {
+    // Clear existing timeout
+    clearTimeout(resizeTimeout);
 
-    // Listen for color scheme changes
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    mediaQuery.addEventListener('change', handleColorSchemeChange);
+    // Debounce resize events (wait 250ms after last resize)
+    resizeTimeout = setTimeout(() => {
+        const currentWidth = window.innerWidth;
+        const currentHeight = window.innerHeight;
+
+        // Only regenerate if size changed significantly (more than 50px)
+        const widthDiff = Math.abs(currentWidth - lastWidth);
+        const heightDiff = Math.abs(currentHeight - lastHeight);
+
+        if (widthDiff > 50 || heightDiff > 50) {
+            lastWidth = currentWidth;
+            lastHeight = currentHeight;
+            generateClouds();
+        }
+    }, 250);
+}
+
+// Check if user prefers light mode and generate clouds
+function handleColorSchemeChange() {
+    // Small delay to ensure CSS has updated
+    setTimeout(generateClouds, 50);
+}
+
+// Initialize on page load
+window.addEventListener('load', () => {
+    lastWidth = window.innerWidth;
+    lastHeight = window.innerHeight;
+    generateClouds();
+});
+
+// Use optimized resize handler
+window.addEventListener('resize', handleResize);
+
+// Listen for color scheme changes
+const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+mediaQuery.addEventListener('change', handleColorSchemeChange);
 </script>
