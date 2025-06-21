@@ -255,30 +255,56 @@ function generateStars() {
     }
 }
 
-// Performance optimization: track canvas size and debounce resize events
+// Performance optimization: track canvas size and prevent mobile scroll regeneration
 let lastWidth = 0;
 let lastHeight = 0;
 let resizeTimeout;
+let isScrolling = false;
+let scrollTimeout;
+
+// Detect if we're on a mobile device
+const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                 (navigator.maxTouchPoints && navigator.maxTouchPoints > 2);
+
+// Track scrolling state
+function handleScroll() {
+    if (isMobile) {
+        isScrolling = true;
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+            isScrolling = false;
+        }, 150);
+    }
+}
 
 function handleResize() {
     // Clear existing timeout
     clearTimeout(resizeTimeout);
 
-    // Debounce resize events (wait 250ms after last resize)
+    // On mobile, ignore resize events during scrolling
+    if (isMobile && isScrolling) {
+        return;
+    }
+
+    // Debounce resize events (wait 300ms after last resize)
     resizeTimeout = setTimeout(() => {
         const currentWidth = window.innerWidth;
         const currentHeight = window.innerHeight;
 
-        // Only regenerate if size changed significantly (more than 50px)
+        // For mobile, be more restrictive about height changes (common during scroll)
+        const widthThreshold = 50;
+        const heightThreshold = isMobile ? 100 : 50; // Larger threshold for mobile height
+
         const widthDiff = Math.abs(currentWidth - lastWidth);
         const heightDiff = Math.abs(currentHeight - lastHeight);
 
-        if (widthDiff > 50 || heightDiff > 50) {
+        // Only regenerate if size changed significantly
+        if (widthDiff > widthThreshold || heightDiff > heightThreshold) {
             lastWidth = currentWidth;
             lastHeight = currentHeight;
             generateClouds();
         }
-    }, 250);
+    }, isMobile ? 500 : 250); // Longer debounce on mobile
 }
 
 // Check if user prefers light mode and generate clouds
@@ -293,6 +319,11 @@ window.addEventListener('load', () => {
     lastHeight = window.innerHeight;
     generateClouds();
 });
+
+// Add scroll listener for mobile
+if (isMobile) {
+    window.addEventListener('scroll', handleScroll, { passive: true });
+}
 
 // Use optimized resize handler
 window.addEventListener('resize', handleResize);
