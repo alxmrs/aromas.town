@@ -41,5 +41,3 @@ _Comming soon!_
 
 - [AROMASTORY: The Overlooked History of an Underdog Town](https://www.pajarovalleyhistory.org/aromastory-the-overlooked-history-of-an-underdog-town/). _(Book)_
 - [Aromas & Friends](https://aromaspodcast.com/). _(Podcast)_
-
-

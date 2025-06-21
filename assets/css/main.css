@@ -24,6 +24,39 @@
         --blockquote-border: #555;
         --blockquote-bg: rgba(255, 255, 255, 0.05);
     }
+
+    /* Hide cloud canvas in dark mode */
+    #cloudCanvas {
+        display: none;
+    }
+}
+
+/* Cloud canvas - only visible in light mode */
+#cloudCanvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    display: block;
+}
+
+/* Stars canvas - only visible in dark mode */
+#starsCanvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+    #starsCanvas {
+        display: block;
+    }
 }
 
 body {
