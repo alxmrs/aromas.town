@@ -1,5 +1,6 @@
 ---
 title: The Town of Aromas
+description-meta: A directory of the Aromas community.
 ---
 
 ## Directory
